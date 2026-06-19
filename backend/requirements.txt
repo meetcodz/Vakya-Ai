@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+faster-whisper
+python-multipart
+sentence-transformers
+scikit-learn
+joblib
+anthropic
+google-genai
+python-dotenv

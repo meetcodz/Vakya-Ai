@@ -1,0 +1,86 @@
+Vakya AI – Voice‑Controlled Code Editor
+=======================================
+
+**Project Overview**
+-------------------
+Vakya AI is a premium, browser‑based code editor that lets developers write, navigate, refactor, and explain code entirely through spoken commands. It combines real‑time speech feedback, high‑fidelity Whisper transcription, a custom intent classifier, and the Gemini (or Claude) LLM to produce structured code edits. The editor uses the Monaco editor (the same engine behind VS Code) and a modern UI with dark‑mode styling, markdown‑rendered transcript, and audio‑worklet based recording.
+
+**Key Features**
+- Dual‑engine voice interface: live SpeechRecognition for instant feedback + Whisper server‑side transcription for accuracy.
+- AudioWorklet processor (replaces deprecated ScriptProcessorNode) for low‑latency audio capture.
+- Monaco inline diff view with apply/discard actions.
+- Persistent editor state (code, language, filename) via localStorage.
+- Text‑command fallback UI (input row + send button).
+- Save‑to‑file button for downloading code.
+- Replay button on each transcript entry to re‑run a command.
+- Markdown rendering of transcript entries using marked.js.
+- Expanded language dropdown (Python, JavaScript, TypeScript, Go, Rust, Java, C++, SQL).
+- Intent classifier trained on 352 examples across 6 classes (EDIT, EXPLAIN, GENERATE, REFACTOR, NAVIGATE, UNDO).
+- Gemini/Claude integration for structured JSON edits (startLine, endLine, newCode, explanation).
+- CORS configuration with FRONTEND_URL environment variable.
+- File upload validation (MIME type whitelist, 5 MB size limit).
+- Metrics endpoint (`/metrics`) showing command volume, intent distribution, confidence, success rate.
+
+**Architecture**
+- **Frontend** (served on `http://localhost:5500`): HTML/CSS/JS, Monaco editor, AudioWorklet (`audio-processor.worklet.js`), script.js (logic), index_upgraded.html (UI), style.css (dark theme). Communicates with backend via HTTP `/command`, `/transcribe`, `/classify`.
+- **Backend** (FastAPI, `http://localhost:8000`):
+  - `main_upgraded.py` – async FastAPI app, loads Whisper (`faster-whisper`), Gemini client, intent classifier, handles audio upload, command processing, diff generation.
+  - `classifier.py` – wrapper around the logistic‑regression model trained on sentence‑transformer embeddings.
+  - `train.py` – script to train/re‑train the intent classifier on `intents_expanded.json`.
+  - `requirements.txt` – dependencies: fastapi, uvicorn, faster-whisper, python‑multipart, sentence‑transformers, scikit‑learn, joblib, anthropic, google‑genai, python‑dotenv.
+  - `.env` – contains `GEMINI_API_KEY` and `FRONTEND_URL`.
+  - `data/intents.json` – expanded intent dataset (352 examples).
+- **Model files** (`models/intent_classifier.joblib`, Whisper model cached automatically).
+
+**Setup & Run**
+1. **Backend**
+   ```bash
+   cd backend
+   # copy .env.example → .env and add your Gemini/Claude API key
+   .\venv\Scripts\activate   # Windows
+   pip install -r requirements.txt
+   python train.py   # (re‑train intent classifier – already done)
+   uvicorn main:app --reload   # runs on http://127.0.0.1:8000
+   ```
+2. **Frontend**
+   ```bash
+   cd ..   # project root
+   python -m http.server 5500   # serves index_upgraded.html, script_upgraded.js, etc.
+   # Open http://localhost:5500 in Chrome, allow microphone.
+   ```
+   - Click the mic button or press **Space** to start recording.
+   - Use the text‑command row at the bottom to type commands.
+   - The diff panel shows proposed edits; apply or discard.
+
+**Recent Upgrades (vakya‑upgrades folder)**
+- Replaced `script.js` with `script_upgraded.js` (AudioWorklet, diff, localStorage, replay, markdown).
+- Replaced `index.html` with `index_upgraded.html` (save button, text command UI, marked.js, higher diff height).
+- Added `audio-processor.worklet.js` (AudioWorkletProcessor implementation).
+- Replaced backend `main.py` with `main_upgraded.py` (async Gemini/Whisper, CORS locked, file validation).
+- Expanded intents dataset (`intents_expanded.json`) – 352 examples.
+- Updated `.env` with `FRONTEND_URL`.
+- Retrained intent classifier (accuracy ≈ 96 %).
+
+**Running Project Summary**
+- Frontend URL: `http://localhost:5500`
+- Backend API: `http://127.0.0.1:8000`
+- Environment variables: `GEMINI_API_KEY` (or Claude API key), `FRONTEND_URL=http://localhost:5500`.
+- Use the UI to speak commands like:
+  * “Edit line 5 to return true.”
+  * “Explain this function.”
+  * “Generate a quick‑sort implementation in Python.”
+  * “Navigate to line 12.”
+  * “Undo the last change.”
+
+**Potential LinkedIn Post Angles**
+- Highlight the blend of AI (Whisper, Gemini/Claude) with a premium developer UX.
+- Emphasize the modern AudioWorklet implementation and Monaco diff.
+- Mention the open‑source intent classifier and the ability to retrain on custom data.
+- Showcase the UI design (dark theme, rich interactions) and the productivity boost of voice‑driven coding.
+
+**Contact & License**
+- Repository URL (if applicable) – placeholder.
+- MIT License (or custom).
+- Author: [Your Name].
+
+This file captures all essential information about the Vakya AI project to feed another AI for generating a LinkedIn post.
