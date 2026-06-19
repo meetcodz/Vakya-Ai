@@ -97,7 +97,10 @@ const fileName       = document.getElementById('file-name');
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
-const API_BASE = "http://localhost:8000";
+// ── Backend URL: set window.VAKYA_API_BASE in config.js for production ────────
+const API_BASE = (typeof window.VAKYA_API_BASE !== 'undefined' && window.VAKYA_API_BASE)
+  ? window.VAKYA_API_BASE
+  : "http://localhost:8000";
 
 // ─── localStorage persistence ─────────────────────────────────────────────────
 
