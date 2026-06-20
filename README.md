@@ -1,4 +1,14 @@
-# Vakya AI — Voice Controlled Code Editor
+---
+title: Vakya
+emoji: 🚀
+colorFrom: blue
+colorTo: red
+sdk: docker
+pinned: false
+---
+
+# Vakya AI
+ — Voice Controlled Code Editor
 
 Vakya AI is a premium browser-based, AI voice-controlled code editor that lets developers code, navigate, refactor, and explain their codebase entirely through spoken commands. It utilizes a high-efficiency dual transcription model (combining browser-side Speech Recognition for immediate feedback with a server-side Whisper transcription engine for high-fidelity text generation), a custom Machine Learning intent classifier, and the Claude 3.5 Sonnet API to compile code instructions into structured edits.
 
