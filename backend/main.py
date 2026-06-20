@@ -35,8 +35,8 @@ async def lifespan(app: FastAPI):
     global whisper_model, gemini_model_ready
     try:
         from faster_whisper import WhisperModel
-        print("Loading faster-whisper model ('small.en') …")
-        whisper_model = WhisperModel("small.en", device="cpu", compute_type="int8")
+        print("Loading faster-whisper model ('tiny.en') …")
+        whisper_model = WhisperModel("tiny.en", device="cpu", compute_type="int8")
         print("Whisper model loaded.")
     except Exception as e:
         print(f"Whisper load error: {e}")
