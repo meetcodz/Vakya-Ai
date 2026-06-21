@@ -1,11 +1,3 @@
----
-title: Vakya
-emoji: 🚀
-colorFrom: blue
-colorTo: red
-sdk: docker
-pinned: false
----
 
 # Vakya AI
  — Voice Controlled Code Editor
