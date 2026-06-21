@@ -1,9 +1,0 @@
-# nixpacks.toml — Railway build config for Vakya AI backend
-# nixpacks.toml — Railway build config for Vakya AI backend
-# Installs ffmpeg (required by faster-whisper) and sets up Python
-
-[phases.setup]
-nixPkgs = ["ffmpeg", "python311"]
-
-[phases.install]
-cmds = ["pip install -r backend/requirements.txt"]

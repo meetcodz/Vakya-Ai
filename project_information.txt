@@ -22,44 +22,36 @@ Vakya AI is a premium, browser‑based code editor that lets developers write, n
 - Metrics endpoint (`/metrics`) showing command volume, intent distribution, confidence, success rate.
 
 **Architecture**
-- **Frontend** (served on `http://localhost:5500`): HTML/CSS/JS, Monaco editor, AudioWorklet (`audio-processor.worklet.js`), script.js (logic), index_upgraded.html (UI), style.css (dark theme). Communicates with backend via HTTP `/command`, `/transcribe`, `/classify`.
-- **Backend** (FastAPI, `http://localhost:8000`):
-  - `main_upgraded.py` – async FastAPI app, loads Whisper (`faster-whisper`), Gemini client, intent classifier, handles audio upload, command processing, diff generation.
+- **Frontend** (served on `http://localhost:5500`): Located in `frontend/` directory. HTML/CSS/JS, Monaco editor, AudioWorklet (`audio-processor.worklet.js`), script.js (logic), index.html (UI), style.css (dark theme). Communicates with backend via HTTP `/command`, `/transcribe`, `/classify`.
+- **Backend** (FastAPI, `http://localhost:8000`): Located in `backend/` directory.
+  - `main.py` – async FastAPI app, loads Whisper (`faster-whisper`), Gemini client, intent classifier, handles audio upload, command processing, diff generation.
   - `classifier.py` – wrapper around the logistic‑regression model trained on sentence‑transformer embeddings.
-  - `train.py` – script to train/re‑train the intent classifier on `intents_expanded.json`.
+  - `train.py` – script to train/re‑train the intent classifier on `data/intents.json`.
   - `requirements.txt` – dependencies: fastapi, uvicorn, faster-whisper, python‑multipart, sentence‑transformers, scikit‑learn, joblib, anthropic, google‑genai, python‑dotenv.
   - `.env` – contains `GEMINI_API_KEY` and `FRONTEND_URL`.
-  - `data/intents.json` – expanded intent dataset (352 examples).
+  - `data/intents.json` – intent dataset.
 - **Model files** (`models/intent_classifier.joblib`, Whisper model cached automatically).
 
 **Setup & Run**
 1. **Backend**
    ```bash
    cd backend
-   # copy .env.example → .env and add your Gemini/Claude API key
+   # copy .env.example → .env and add your Gemini API key
    .\venv\Scripts\activate   # Windows
    pip install -r requirements.txt
-   python train.py   # (re‑train intent classifier – already done)
+   python train.py   # (re‑train intent classifier)
    uvicorn main:app --reload   # runs on http://127.0.0.1:8000
    ```
 2. **Frontend**
    ```bash
-   cd ..   # project root
-   python -m http.server 5500   # serves index_upgraded.html, script_upgraded.js, etc.
+   cd frontend
+   python -m http.server 5500   # serves index.html, script.js, etc.
    # Open http://localhost:5500 in Chrome, allow microphone.
    ```
    - Click the mic button or press **Space** to start recording.
    - Use the text‑command row at the bottom to type commands.
    - The diff panel shows proposed edits; apply or discard.
 
-**Recent Upgrades (vakya‑upgrades folder)**
-- Replaced `script.js` with `script_upgraded.js` (AudioWorklet, diff, localStorage, replay, markdown).
-- Replaced `index.html` with `index_upgraded.html` (save button, text command UI, marked.js, higher diff height).
-- Added `audio-processor.worklet.js` (AudioWorkletProcessor implementation).
-- Replaced backend `main.py` with `main_upgraded.py` (async Gemini/Whisper, CORS locked, file validation).
-- Expanded intents dataset (`intents_expanded.json`) – 352 examples.
-- Updated `.env` with `FRONTEND_URL`.
-- Retrained intent classifier (accuracy ≈ 96 %).
 
 **Running Project Summary**
 - Frontend URL: `http://localhost:5500`

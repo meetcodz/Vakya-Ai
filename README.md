@@ -96,10 +96,15 @@ Vakya AI is designed with an asynchronous decoupled architecture:
 
 ### 2. Frontend Execution (Browser)
 
-1. Open `index.html` in **Google Chrome**. (Chrome is required for Web Audio + Speech Recognition continuous features).
-2. Allow Microphone access when prompted.
-3. Select the programming language from the dropdown menu in the top bar.
-4. Press **Space** or click the mic button and speak a command!
+1. Navigate to the `frontend/` directory and start a local web server:
+   ```bash
+   cd frontend
+   python -m http.server 5500
+   ```
+2. Open [http://localhost:5500](http://localhost:5500) in **Google Chrome**. (Chrome is required for Web Audio + Speech Recognition continuous features).
+3. Allow Microphone access when prompted.
+4. Select the programming language from the dropdown menu in the top bar.
+5. Press **Space** or click the mic button and speak a command!
 
 ---
 
@@ -136,3 +141,13 @@ Returns JSON data detailing:
 * Percent success rate.
 * Distribution frequency across intent categories.
 * Average model classification confidence.
+
+---
+
+## 🌐 Hugging Face Spaces Deployment
+
+Vakya AI is configured for deployment on Hugging Face Spaces using Docker:
+- Hugging Face Spaces metadata is defined at the top of this `README.md`.
+- The `Dockerfile` in the root directory manages the build environment (installing `ffmpeg`, setting up a non-root user, installing requirements, and exposing port `7860`).
+- The production frontend uses the production config in `frontend/config.js` pointing to the deployed space backend.
+
