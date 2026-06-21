@@ -1,258 +1,1058 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vakya — Voice Code Editor</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <!-- marked.js — real markdown rendering in transcript -->
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vakya AI — Voice-Controlled Code Editor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
 
-  <style>
-    /* ── diff-preview-area hosts Monaco diff editor (needs explicit height) ── */
-    #diff-preview-area {
-      height: 180px;
-      min-height: 120px;
-      overflow: hidden;
-      border-radius: 6px;
-    }
+:root{
+  --bg:#000000;
+  --bg2:#080808;
+  --bg3:#0f0f0f;
+  --surface:#111111;
+  --border:rgba(255,255,255,0.07);
+  --border2:rgba(255,255,255,0.12);
+  --text:#ffffff;
+  --text2:rgba(255,255,255,0.55);
+  --text3:rgba(255,255,255,0.28);
+  --green:#00E87A;
+  --green2:rgba(0,232,122,0.12);
+  --green3:rgba(0,232,122,0.06);
+  --glow:rgba(0,232,122,0.18);
+  --body:'Inter',sans-serif;
+  --mono:'JetBrains Mono',monospace;
+}
 
-    /* ── Text command row ─────────────────────────────────────────────────── */
-    #text-command-row {
-      display: flex;
-      gap: 6px;
-      padding: 10px 12px;
-      border-top: 1px solid var(--border, #1f1f2e);
-      background: var(--surface, #13131a);
-    }
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--body);
+  font-size:15px;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
 
-    #text-command-input {
-      flex: 1;
-      background: var(--bg, #0e0e12);
-      border: 1px solid var(--border-mid, #2a2a3d);
-      border-radius: 6px;
-      color: var(--text, #e8e8f0);
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 12px;
-      padding: 6px 10px;
-      outline: none;
-    }
+/* ── NAV ── */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:200;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 40px;height:56px;
+  background:rgba(0,0,0,0.75);
+  backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+}
+.n-logo{
+  display:flex;align-items:center;gap:8px;
+  text-decoration:none;color:var(--text);
+}
+.n-logo-icon{
+  width:26px;height:26px;border-radius:5px;
+  background:var(--green);
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+.n-logo-text{
+  font-size:15px;font-weight:700;letter-spacing:-0.02em;
+}
+.n-links{
+  display:flex;align-items:center;gap:32px;list-style:none;
+}
+.n-links a{
+  font-size:13.5px;font-weight:400;color:var(--text2);
+  text-decoration:none;transition:color .15s;
+}
+.n-links a:hover{color:var(--text);}
+.n-right{display:flex;align-items:center;gap:10px;}
 
-    #text-command-input:focus {
-      border-color: #7C6BFF;
-    }
+.btn-ghost{
+  font-family:var(--body);font-size:13px;font-weight:500;
+  padding:6px 16px;border-radius:6px;cursor:pointer;
+  text-decoration:none;transition:all .15s;
+  background:none;border:1px solid var(--border2);color:var(--text2);
+}
+.btn-ghost:hover{border-color:rgba(255,255,255,0.3);color:var(--text);}
 
-    #text-command-input::placeholder {
-      color: #3d3d5c;
-    }
+.btn-green{
+  font-family:var(--body);font-size:13px;font-weight:600;
+  padding:6px 18px;border-radius:6px;cursor:pointer;
+  text-decoration:none;transition:all .15s;
+  background:var(--green);border:1px solid var(--green);
+  color:#000;display:inline-flex;align-items:center;gap:6px;
+}
+.btn-green:hover{opacity:.88;transform:translateY(-1px);}
 
-    #text-command-send {
-      background: #7C6BFF;
-      border: none;
-      border-radius: 6px;
-      color: #fff;
-      cursor: pointer;
-      font-size: 12px;
-      font-weight: 600;
-      padding: 6px 12px;
-      transition: opacity 0.15s;
-    }
+/* ── HERO ── */
+.hero{
+  position:relative;
+  min-height:100vh;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:100px 40px 80px;
+  text-align:center;
+  overflow:hidden;
+}
 
-    #text-command-send:hover { opacity: 0.85; }
+/* glow blobs */
+.glow-blob{
+  position:absolute;pointer-events:none;border-radius:50%;
+  filter:blur(100px);
+  animation:blobpulse 6s ease-in-out infinite;
+}
+.glow-1{
+  width:600px;height:300px;
+  background:radial-gradient(ellipse,rgba(0,232,122,0.15) 0%,transparent 70%);
+  top:-60px;left:50%;transform:translateX(-50%);
+}
+.glow-2{
+  width:400px;height:200px;
+  background:radial-gradient(ellipse,rgba(0,232,122,0.08) 0%,transparent 70%);
+  bottom:200px;left:20%;
+  animation-delay:2s;
+}
+.glow-3{
+  width:300px;height:200px;
+  background:radial-gradient(ellipse,rgba(0,150,80,0.1) 0%,transparent 70%);
+  top:40%;right:15%;
+  animation-delay:4s;
+}
+@keyframes blobpulse{
+  0%,100%{opacity:1;transform:translateX(-50%) scale(1);}
+  50%{opacity:.6;transform:translateX(-50%) scale(1.08);}
+}
+.glow-2{animation:blobpulse2 7s ease-in-out infinite;}
+.glow-3{animation:blobpulse3 8s ease-in-out infinite;}
+@keyframes blobpulse2{0%,100%{opacity:1;}50%{opacity:.4;}}
+@keyframes blobpulse3{0%,100%{opacity:1;}50%{opacity:.5;}}
 
-    /* ── Save button (mirrors open-file-btn style) ────────────────────────── */
-    #save-file-btn {
-      background: none;
-      border: none;
-      color: var(--muted, #7070a0);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 3px 5px;
-      border-radius: 4px;
-      transition: color 0.15s;
-    }
-    #save-file-btn:hover { color: var(--text, #e8e8f0); }
+/* noise texture overlay */
+.hero::before{
+  content:'';position:absolute;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events:none;opacity:.4;
+}
 
-    /* ── Replay button on transcript entries ─────────────────────────────── */
-    .replay-btn {
-      background: none;
-      border: 1px solid var(--border-mid, #2a2a3d);
-      border-radius: 4px;
-      color: var(--muted, #7070a0);
-      cursor: pointer;
-      font-size: 10px;
-      margin-top: 5px;
-      padding: 2px 7px;
-      transition: color 0.15s, border-color 0.15s;
-    }
-    .replay-btn:hover { color: #7C6BFF; border-color: #7C6BFF; }
-  </style>
+.hero-badge{
+  display:inline-flex;align-items:center;gap:7px;
+  font-family:var(--mono);font-size:11px;font-weight:500;
+  letter-spacing:.05em;
+  color:var(--green);
+  border:1px solid rgba(0,232,122,0.25);
+  background:rgba(0,232,122,0.07);
+  border-radius:20px;padding:5px 14px;
+  margin-bottom:32px;position:relative;z-index:1;
+}
+.badge-dot{
+  width:5px;height:5px;border-radius:50%;
+  background:var(--green);
+  animation:bdot 2s ease-in-out infinite;
+}
+@keyframes bdot{0%,100%{opacity:1;}50%{opacity:.3;}}
+
+.hero h1{
+  font-size:clamp(48px,7vw,88px);
+  font-weight:900;
+  line-height:1.0;
+  letter-spacing:-0.04em;
+  color:var(--text);
+  max-width:900px;
+  margin-bottom:24px;
+  position:relative;z-index:1;
+}
+
+.h1-green{color:var(--green);}
+
+/* word swap */
+.word-swap{
+  display:inline-block;
+  position:relative;
+}
+.ws-inner{
+  display:inline-block;
+  overflow:hidden;
+  vertical-align:bottom;
+}
+.ws-track{
+  display:flex;flex-direction:column;
+  animation:wsroll 9s steps(1) infinite;
+}
+@keyframes wsroll{
+  0%,30%  {transform:translateY(0%);}
+  33%,63% {transform:translateY(-33.33%);}
+  66%,96% {transform:translateY(-66.66%);}
+  100%    {transform:translateY(0%);}
+}
+.ws-word{
+  display:block;
+  line-height:1.0;
+  white-space:nowrap;
+}
+
+.hero-desc{
+  font-size:17px;font-weight:300;
+  color:var(--text2);line-height:1.75;
+  max-width:520px;margin:0 auto 40px;
+  position:relative;z-index:1;
+}
+
+.hero-actions{
+  display:flex;align-items:center;justify-content:center;
+  gap:12px;flex-wrap:wrap;
+  margin-bottom:60px;position:relative;z-index:1;
+}
+
+.btn-hero-green{
+  font-family:var(--body);font-size:15px;font-weight:600;
+  padding:13px 32px;border-radius:8px;
+  background:var(--green);border:none;color:#000;
+  cursor:pointer;text-decoration:none;
+  display:inline-flex;align-items:center;gap:8px;
+  transition:opacity .15s,transform .15s,box-shadow .2s;
+  box-shadow:0 0 0 0 rgba(0,232,122,0);
+}
+.btn-hero-green:hover{
+  opacity:.9;transform:translateY(-2px);
+  box-shadow:0 8px 32px rgba(0,232,122,0.3);
+}
+
+.btn-hero-outline{
+  font-family:var(--body);font-size:15px;font-weight:500;
+  padding:13px 28px;border-radius:8px;
+  background:none;border:1px solid var(--border2);color:var(--text2);
+  cursor:pointer;text-decoration:none;
+  transition:all .15s;
+}
+.btn-hero-outline:hover{border-color:rgba(255,255,255,.3);color:var(--text);}
+
+/* ── Hero terminal ── */
+.hero-terminal{
+  width:100%;max-width:720px;
+  background:var(--surface);
+  border:1px solid var(--border2);
+  border-radius:12px;overflow:hidden;
+  box-shadow:0 0 0 1px var(--border),0 40px 80px rgba(0,0,0,.6);
+  position:relative;z-index:1;
+  text-align:left;
+}
+
+.ht-bar{
+  display:flex;align-items:center;gap:7px;
+  padding:10px 14px;
+  border-bottom:1px solid var(--border);
+  background:var(--bg3);
+}
+.ht-dot{width:10px;height:10px;border-radius:50%;}
+.ht-r{background:#FF5F57;}.ht-y{background:#FEBC2E;}.ht-g{background:#28C840;}
+.ht-title{
+  font-family:var(--mono);font-size:11px;
+  color:var(--text3);margin:0 auto;
+}
+
+.ht-body{
+  padding:18px 20px;
+  font-family:var(--mono);font-size:12.5px;line-height:1.75;
+}
+
+.hl{display:flex;gap:14px;}
+.ln{color:var(--text3);min-width:18px;text-align:right;user-select:none;flex-shrink:0;font-size:11px;}
+.kw{color:#bb9af7;}
+.fn{color:#7aa2f7;}
+.st{color:var(--green);}
+.cm{color:rgba(255,255,255,.22);font-style:italic;}
+.ty{color:#89ddff;}
+.pl{color:#cdd6f4;}
+.nm{color:#ff9e64;}
+
+.hl-active{
+  background:rgba(0,232,122,0.07);
+  border-left:2px solid var(--green);
+  margin:0 -20px;padding:0 20px 0 18px;
+}
+
+.cur{
+  display:inline-block;width:2px;height:13px;
+  background:var(--green);vertical-align:text-bottom;
+  margin-left:1px;animation:cur .9s step-end infinite;
+}
+@keyframes cur{50%{opacity:0;}}
+
+/* voice row */
+.ht-voice{
+  border-top:1px solid var(--border);
+  padding:12px 18px;
+  display:flex;align-items:center;gap:10px;
+  background:var(--bg3);
+}
+.hv-mic{
+  width:30px;height:30px;border-radius:50%;
+  background:var(--green);border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;transition:transform .15s,box-shadow .2s;
+}
+.hv-mic:hover{transform:scale(1.1);}
+.hv-mic.on{box-shadow:0 0 0 6px rgba(0,232,122,.18);}
+
+.hv-bars{display:flex;align-items:center;gap:2.5px;flex:1;}
+.hv-bar{
+  width:2.5px;height:3px;border-radius:2px;
+  background:rgba(255,255,255,.15);transition:height .08s;
+}
+.hv-bar.lit{
+  background:var(--green);opacity:.8;
+  animation:hvwave .65s ease-in-out infinite;
+}
+.hv-bar:nth-child(2){animation-delay:.08s;}
+.hv-bar:nth-child(3){animation-delay:.16s;}
+.hv-bar:nth-child(4){animation-delay:.24s;}
+.hv-bar:nth-child(5){animation-delay:.32s;}
+.hv-bar:nth-child(6){animation-delay:.24s;}
+.hv-bar:nth-child(7){animation-delay:.16s;}
+.hv-bar:nth-child(8){animation-delay:.08s;}
+.hv-bar:nth-child(9){animation-delay:.16s;}
+.hv-bar:nth-child(10){animation-delay:.24s;}
+@keyframes hvwave{0%,100%{height:3px;}50%{height:16px;}}
+
+.hv-text{
+  font-family:var(--mono);font-size:11px;
+  color:var(--text3);font-style:italic;
+  flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.hv-tag{
+  font-family:var(--mono);font-size:10px;font-weight:500;
+  padding:2px 8px;border-radius:4px;
+  background:rgba(0,232,122,.12);color:var(--green);
+  border:1px solid rgba(0,232,122,.25);
+  flex-shrink:0;display:none;
+}
+
+/* ── DIVIDER ── */
+.divider{border:none;border-top:1px solid var(--border);}
+
+/* ── STACK STRIP ── */
+.stack-strip{
+  max-width:1100px;margin:0 auto;
+  padding:28px 40px;
+  display:flex;align-items:center;gap:0;
+}
+.ss-label{
+  font-family:var(--mono);font-size:10px;
+  letter-spacing:.08em;text-transform:uppercase;
+  color:var(--text3);flex-shrink:0;
+  padding-right:28px;border-right:1px solid var(--border);
+  margin-right:28px;
+}
+.ss-items{
+  display:flex;align-items:center;gap:28px;flex-wrap:wrap;
+}
+.ss-item{
+  font-size:13px;font-weight:400;color:var(--text3);
+  display:flex;align-items:center;gap:6px;
+  transition:color .15s;
+}
+.ss-item:hover{color:var(--text2);}
+.ss-dot{width:4px;height:4px;border-radius:50%;background:var(--border2);}
+
+/* ── SECTION ── */
+.section{
+  max-width:1100px;margin:0 auto;
+  padding:96px 40px;
+}
+.section-center{text-align:center;}
+
+.s-tag{
+  display:inline-flex;align-items:center;gap:6px;
+  font-family:var(--mono);font-size:11px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--green);
+  margin-bottom:20px;
+}
+.s-tag::before{
+  content:'';width:14px;height:1px;background:var(--green);
+}
+
+.s-h{
+  font-size:clamp(30px,3.8vw,48px);font-weight:800;
+  line-height:1.1;letter-spacing:-0.03em;
+  color:var(--text);margin-bottom:14px;
+}
+.s-h span{color:var(--green);}
+
+.s-p{
+  font-size:16px;font-weight:300;
+  color:var(--text2);line-height:1.75;
+  max-width:500px;
+}
+.section-center .s-p{margin:0 auto;}
+
+/* ── HOW GRID ── */
+.how-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:1px;background:var(--border);
+  border:1px solid var(--border);border-radius:12px;
+  overflow:hidden;margin-top:56px;
+}
+.how-card{
+  background:var(--bg);
+  padding:36px 30px;
+  transition:background .2s;
+}
+.how-card:hover{background:var(--bg3);}
+
+.hw-num{
+  font-family:var(--mono);font-size:11px;
+  color:var(--text3);margin-bottom:28px;
+  letter-spacing:.04em;
+}
+.hw-icon{
+  width:40px;height:40px;border-radius:10px;
+  border:1px solid var(--border2);
+  background:var(--bg3);
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;margin-bottom:18px;
+}
+.hw-title{
+  font-size:17px;font-weight:700;
+  letter-spacing:-0.02em;color:var(--text);
+  margin-bottom:10px;
+}
+.hw-desc{
+  font-size:13.5px;font-weight:300;
+  color:var(--text2);line-height:1.7;
+}
+.hw-desc strong{color:var(--text);font-weight:500;}
+
+/* ── FEATURE TABS ── */
+.feat-tabs{
+  display:flex;align-items:center;gap:0;
+  border:1px solid var(--border);border-radius:8px;
+  overflow:hidden;width:fit-content;margin:56px auto 0;
+}
+.feat-tab{
+  font-family:var(--mono);font-size:11.5px;font-weight:500;
+  letter-spacing:.03em;
+  padding:9px 20px;background:none;border:none;
+  color:var(--text3);cursor:pointer;transition:all .15s;
+  border-right:1px solid var(--border);
+}
+.feat-tab:last-child{border-right:none;}
+.feat-tab:hover{color:var(--text);background:var(--bg3);}
+.feat-tab.active{background:var(--green);color:#000;font-weight:600;}
+
+.feat-panels{margin-top:24px;}
+.feat-panel{display:none;}
+.feat-panel.active{display:block;}
+
+/* card container */
+.feat-cards{
+  display:grid;grid-template-columns:repeat(2,1fr);gap:1px;
+  background:var(--border);border:1px solid var(--border);
+  border-radius:12px;overflow:hidden;
+}
+.feat-card{
+  background:var(--bg);padding:32px 28px;
+  transition:background .2s;
+}
+.feat-card:hover{background:var(--bg3);}
+.feat-card.wide{grid-column:span 2;}
+
+.fc-icon{
+  width:36px;height:36px;border-radius:8px;
+  border:1px solid var(--border2);background:var(--bg3);
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;margin-bottom:16px;
+}
+.fc-title{
+  font-size:15px;font-weight:600;letter-spacing:-0.01em;
+  color:var(--text);margin-bottom:8px;
+}
+.fc-desc{
+  font-size:13px;font-weight:300;color:var(--text2);line-height:1.7;
+}
+.fc-tag{
+  display:inline-flex;align-items:center;gap:5px;
+  font-family:var(--mono);font-size:10px;
+  color:var(--green);background:var(--green2);
+  border:1px solid rgba(0,232,122,.2);
+  border-radius:4px;padding:2px 8px;margin-top:12px;
+}
+
+/* full panel — diff preview */
+.diff-container{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;overflow:hidden;margin-top:20px;
+}
+.diff-topbar{
+  display:flex;align-items:center;gap:7px;
+  padding:10px 14px;border-bottom:1px solid var(--border);
+  background:var(--bg3);
+}
+.diff-body{
+  padding:18px 20px;
+  font-family:var(--mono);font-size:12px;line-height:1.8;
+}
+.d-rm{
+  background:rgba(239,68,68,.07);color:#f87171;
+  margin:0 -20px;padding:0 20px;
+  border-left:2px solid rgba(239,68,68,.4);
+  padding-left:18px;
+}
+.d-add{
+  background:rgba(0,232,122,.07);color:var(--green);
+  margin:0 -20px;padding:0 20px;
+  border-left:2px solid rgba(0,232,122,.35);
+  padding-left:18px;
+}
+.d-ctx{color:rgba(255,255,255,.35);}
+.d-gu{display:inline-block;width:24px;font-size:10px;color:var(--text3);}
+
+/* ML panel */
+.ml-container{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;overflow:hidden;margin-top:20px;
+  padding:24px;
+}
+.ml-head{
+  font-family:var(--mono);font-size:10px;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--text3);margin-bottom:20px;
+}
+.ml-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.ml-row:last-child{margin-bottom:0;}
+.ml-lbl{font-family:var(--mono);font-size:11px;color:var(--text2);width:72px;flex-shrink:0;}
+.ml-trk{flex:1;height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;}
+.ml-fill{height:100%;background:var(--green);border-radius:2px;transform-origin:left;animation:mlfill 1.2s cubic-bezier(.22,1,.36,1) both;}
+@keyframes mlfill{from{transform:scaleX(0);}}
+.ml-pct{font-family:var(--mono);font-size:10px;color:var(--text3);width:30px;text-align:right;}
+
+/* ── STACK SECTION ── */
+.stack-layout{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:56px;align-items:start;margin-top:56px;
+}
+.sc-block{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;overflow:hidden;
+}
+.sc-top{
+  display:flex;align-items:center;gap:7px;
+  padding:10px 14px;border-bottom:1px solid var(--border);
+  background:var(--bg3);
+}
+.sc-tabs{display:flex;gap:0;margin-left:auto;}
+.sc-tab{
+  font-family:var(--mono);font-size:10.5px;
+  padding:3px 10px;border:1px solid var(--border2);
+  background:none;color:var(--text3);cursor:pointer;
+  transition:all .15s;
+}
+.sc-tab:first-child{border-radius:4px 0 0 4px;}
+.sc-tab:last-child{border-radius:0 4px 4px 0;border-left:none;}
+.sc-tab.active{background:var(--green);border-color:var(--green);color:#000;}
+.sc-body{
+  padding:18px 20px;font-family:var(--mono);
+  font-size:12px;line-height:1.8;color:#cdd6f4;min-height:260px;
+}
+.sc-line{display:flex;gap:12px;}
+.sc-ln{color:var(--text3);min-width:18px;text-align:right;user-select:none;flex-shrink:0;font-size:10px;}
+
+.stack-list{display:flex;flex-direction:column;gap:0;}
+.si{
+  padding:20px 0;border-bottom:1px solid var(--border);
+  transition:padding-left .2s;
+}
+.si:first-child{border-top:1px solid var(--border);}
+.si:hover{padding-left:6px;}
+.si-name{
+  font-size:14px;font-weight:600;color:var(--text);
+  margin-bottom:4px;display:flex;align-items:center;gap:8px;
+}
+.si-badge{
+  font-family:var(--mono);font-size:9.5px;
+  padding:2px 7px;border-radius:3px;
+  background:var(--green2);color:var(--green);
+  border:1px solid rgba(0,232,122,.2);
+}
+.si-desc{font-size:13px;font-weight:300;color:var(--text3);line-height:1.65;}
+
+/* ── CTA ── */
+.cta-section{
+  padding:0 40px 120px;
+}
+.cta-card{
+  max-width:1100px;margin:0 auto;
+  border:1px solid var(--border2);border-radius:16px;
+  padding:80px 64px;text-align:center;
+  background:var(--bg3);position:relative;overflow:hidden;
+}
+.cta-glow{
+  position:absolute;width:700px;height:200px;
+  background:radial-gradient(ellipse,rgba(0,232,122,.1) 0%,transparent 70%);
+  top:-60px;left:50%;transform:translateX(-50%);
+  pointer-events:none;
+}
+.cta-h{
+  font-size:clamp(34px,4.5vw,58px);font-weight:900;
+  letter-spacing:-0.035em;line-height:1.05;
+  color:var(--text);margin-bottom:16px;
+  position:relative;
+}
+.cta-h span{color:var(--green);}
+.cta-p{
+  font-size:15px;font-weight:300;color:var(--text2);
+  max-width:440px;margin:0 auto 36px;line-height:1.75;
+  position:relative;
+}
+.cta-actions{
+  display:flex;align-items:center;justify-content:center;
+  gap:12px;flex-wrap:wrap;position:relative;
+}
+
+/* ── FOOTER ── */
+footer{
+  border-top:1px solid var(--border);
+  padding:32px 40px;
+  display:flex;align-items:center;justify-content:space-between;
+  max-width:1100px;margin:0 auto;
+}
+.foot-logo{
+  font-size:14px;font-weight:700;letter-spacing:-0.02em;
+  color:var(--text2);text-decoration:none;
+}
+.foot-links{display:flex;gap:24px;list-style:none;}
+.foot-links a{
+  font-size:12.5px;color:var(--text3);text-decoration:none;transition:color .15s;
+}
+.foot-links a:hover{color:var(--text2);}
+.foot-copy{font-family:var(--mono);font-size:11px;color:var(--text3);}
+
+/* ── REVEAL ── */
+.reveal{opacity:0;transform:translateY(18px);transition:opacity .6s ease,transform .6s ease;}
+.reveal.on{opacity:1;transform:none;}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){
+  nav{padding:0 20px;}
+  .n-links{display:none;}
+  .hero{padding:90px 20px 60px;}
+  .hero h1{font-size:clamp(40px,10vw,64px);}
+  .stack-strip{padding:20px;flex-direction:column;align-items:flex-start;gap:12px;}
+  .ss-label{border:none;padding:0;margin:0;}
+  .section{padding:64px 20px;}
+  .how-grid{grid-template-columns:1fr;}
+  .feat-cards{grid-template-columns:1fr;}
+  .feat-card.wide{grid-column:span 1;}
+  .stack-layout{grid-template-columns:1fr;}
+  .cta-section{padding:0 20px 64px;}
+  .cta-card{padding:48px 24px;}
+  footer{flex-direction:column;gap:16px;text-align:center;padding:24px 20px;}
+}
+@media(prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important;}
+}
+</style>
 </head>
 <body>
 
-  <!-- Top bar -->
-  <header id="topbar">
-    <div id="topbar-left">
-      <div id="logo">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-          <circle cx="10" cy="10" r="9" stroke="#7C6BFF" stroke-width="1.5"/>
-          <path d="M7 10 Q10 6 13 10 Q10 14 7 10Z" fill="#7C6BFF" opacity="0.9"/>
+<!-- NAV -->
+<nav>
+  <a href="index.html" class="n-logo">
+    <div class="n-logo-icon">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M4 7 Q7 3.5 10 7 Q7 10.5 4 7Z" fill="#000"/>
+      </svg>
+    </div>
+    <span class="n-logo-text">Vakya</span>
+  </a>
+  <ul class="n-links">
+    <li><a href="#how">How it works</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#stack">Stack</a></li>
+    <li><a href="https://github.com/meetcodz" target="_blank">GitHub ↗</a></li>
+  </ul>
+  <div class="n-right">
+    <a href="https://github.com/meetcodz" class="btn-ghost" target="_blank">GitHub</a>
+    <a href="editor.html" class="btn-green">
+      Try Vakya
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+        <path d="M2.5 6.5h8M7.5 3.5l3 3-3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="glow-blob glow-1"></div>
+  <div class="glow-blob glow-2"></div>
+  <div class="glow-blob glow-3"></div>
+
+
+  <h1>
+    The editor that<br>
+    <span class="h1-green">
+      <span class="word-swap">
+        <span class="ws-inner" style="height:1em;">
+          <span class="ws-track">
+            <span class="ws-word">listens.</span>
+            <span class="ws-word">understands.</span>
+            <span class="ws-word">transforms.</span>
+          </span>
+        </span>
+      </span>
+    </span>
+  </h1>
+
+  <p class="hero-desc">
+    Speak a command. Vakya classifies your intent, sends it to Gemini AI, and shows you an inline diff before touching a single line of code.
+  </p>
+
+  <div class="hero-actions">
+    <a href="editor.html" class="btn-hero-green">
+      Launch Editor
+      <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+        <path d="M3 7.5h9M8.5 4l4 3.5-4 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </a>
+    <a href="https://github.com/meetcodz" class="btn-hero-outline" target="_blank">View Source</a>
+  </div>
+
+  <!-- Terminal -->
+  <div class="hero-terminal">
+    <div class="ht-bar">
+      <div class="ht-dot ht-r"></div>
+      <div class="ht-dot ht-y"></div>
+      <div class="ht-dot ht-g"></div>
+      <span class="ht-title">main.py — Vakya AI</span>
+    </div>
+    <div class="ht-body">
+      <div class="hl"><span class="ln">1</span><span><span class="kw">def</span> <span class="fn">process_data</span><span class="pl">(items: </span><span class="ty">list</span><span class="pl">) -> </span><span class="ty">dict</span><span class="pl">:</span></span></div>
+      <div class="hl"><span class="ln">2</span><span class="cm">&nbsp;&nbsp;&nbsp;&nbsp;# transform a list of items into a keyed dict</span></div>
+      <div class="hl hl-active"><span class="ln">3</span><span class="pl">&nbsp;&nbsp;&nbsp;&nbsp;result: <span class="ty">dict</span>[<span class="ty">str</span>, <span class="ty">Any</span>] = {}</span></div>
+      <div class="hl"><span class="ln">4</span><span class="pl">&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">for</span> item <span class="kw">in</span> items:</span></div>
+      <div class="hl"><span class="ln">5</span><span class="pl">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;result[item[<span class="st">'id'</span>]] = item[<span class="st">'value'</span>]</span></div>
+      <div class="hl"><span class="ln">6</span><span class="pl">&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> result</span></div>
+      <div class="hl"><span class="ln">7</span><span>&nbsp;</span></div>
+      <div class="hl"><span class="ln">8</span><span class="pl"><span class="cur"></span></span></div>
+    </div>
+    <div class="ht-voice">
+      <button class="hv-mic" id="hmicbtn">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <rect x="3.5" y="1" width="5" height="7" rx="2.5" fill="#000"/>
+          <path d="M2 5.5a4 4 0 008 0" stroke="#000" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+          <line x1="6" y1="9.5" x2="6" y2="11" stroke="#000" stroke-width="1.2" stroke-linecap="round"/>
         </svg>
-        <span id="logo-text">Vakya</span>
+      </button>
+      <div class="hv-bars" id="hvbars">
+        <div class="hv-bar"></div><div class="hv-bar"></div><div class="hv-bar"></div>
+        <div class="hv-bar"></div><div class="hv-bar"></div><div class="hv-bar"></div>
+        <div class="hv-bar"></div><div class="hv-bar"></div><div class="hv-bar"></div>
+        <div class="hv-bar"></div>
       </div>
-      <div id="file-tab">
-        <span id="file-dot"></span>
-        <span id="file-name">untitled.py</span>
+      <div class="hv-text" id="hvtext">Click to demo a voice command</div>
+      <div class="hv-tag" id="hvtag">EDIT</div>
+    </div>
+  </div>
+</section>
 
-        <!-- Open file -->
-        <button id="open-file-btn" title="Open local file">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-               stroke-linecap="round" stroke-linejoin="round">
-            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-          </svg>
-        </button>
+<hr class="divider">
 
-        <!-- Save file (NEW) -->
-        <button id="save-file-btn" title="Save / download file">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-               stroke-linecap="round" stroke-linejoin="round">
-            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-            <polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
-          </svg>
-        </button>
+<!-- STACK STRIP -->
+<div class="stack-strip">
+  <div class="ss-label">Powered by</div>
+  <div class="ss-items">
+    <div class="ss-item"><span class="ss-dot"></span>FastAPI + Uvicorn</div>
+    <div class="ss-item"><span class="ss-dot"></span>Monaco Editor</div>
+    <div class="ss-item"><span class="ss-dot"></span>Gemini Flash</div>
+    <div class="ss-item"><span class="ss-dot"></span>faster-whisper</div>
+    <div class="ss-item"><span class="ss-dot"></span>scikit-learn</div>
+    <div class="ss-item"><span class="ss-dot"></span>AudioWorklet API</div>
+  </div>
+</div>
 
-        <input type="file" id="file-input" style="display:none;"
-               accept=".py,.js,.ts,.go,.rs,.java,.cpp,.sql,.txt"/>
+<hr class="divider">
+
+<!-- HOW IT WORKS -->
+<section class="section reveal" id="how">
+  <div class="s-tag">How it works</div>
+  <h2 class="s-h">Three steps. <span>Under two seconds.</span></h2>
+  <p class="s-p">From spoken word to applied code change — every stage is deliberate.</p>
+
+  <div class="how-grid">
+    <div class="how-card">
+      <div class="hw-num">01 — Capture</div>
+      <div class="hw-icon">🎙</div>
+      <div class="hw-title">Voice to text</div>
+      <div class="hw-desc">Audio runs on a dedicated <strong>AudioWorklet</strong> thread. Encoded as WAV, transcribed by <strong>faster-whisper</strong> (small.en, int8, CPU) in ~300ms. Fully offline.</div>
+    </div>
+    <div class="how-card">
+      <div class="hw-num">02 — Classify</div>
+      <div class="hw-icon">🧠</div>
+      <div class="hw-title">Intent detection</div>
+      <div class="hw-desc"><strong>Logistic regression</strong> on sentence embeddings maps your transcription to one of 6 intents — EDIT, REFACTOR, GENERATE, EXPLAIN, NAVIGATE, UNDO — in under 10ms.</div>
+    </div>
+    <div class="how-card">
+      <div class="hw-num">03 — Transform</div>
+      <div class="hw-icon">✦</div>
+      <div class="hw-title">AI code action</div>
+      <div class="hw-desc">Command + intent + editor state → <strong>Gemini Flash</strong> via async FastAPI. Returns a precise JSON edit shown as a real <strong>Monaco inline diff</strong> before anything is applied.</div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- FEATURES -->
+<section class="section section-center reveal" id="features">
+  <div class="s-tag">Features</div>
+  <h2 class="s-h">Built for the <span>voice workflow.</span></h2>
+  <p class="s-p">Not a chatbot with a code block. Every detail designed around spoken commands.</p>
+
+  <div class="feat-tabs">
+    <button class="feat-tab active" data-panel="core">Core</button>
+    <button class="feat-tab" data-panel="ml">ML Layer</button>
+    <button class="feat-tab" data-panel="diff">Diff Preview</button>
+  </div>
+
+  <div class="feat-panels">
+    <!-- CORE -->
+    <div class="feat-panel active" id="fp-core">
+      <div class="feat-cards">
+        <div class="feat-card">
+          <div class="fc-icon">🔊</div>
+          <div class="fc-title">AudioWorklet capture</div>
+          <div class="fc-desc">Dedicated audio thread — not the main JS thread. Zero dropouts, no buffering latency. Graceful fallback to ScriptProcessorNode for older browsers.</div>
+          <div class="fc-tag">W3C standard · future-proof</div>
+        </div>
+        <div class="feat-card">
+          <div class="fc-icon">💾</div>
+          <div class="fc-title">Session persistence</div>
+          <div class="fc-desc">Code, language, and filename saved to localStorage on every keystroke (debounced 800ms). Refresh the page — everything is exactly where you left it.</div>
+          <div class="fc-tag">Zero backend required</div>
+        </div>
+        <div class="feat-card">
+          <div class="fc-icon">⌨️</div>
+          <div class="fc-title">Text command fallback</div>
+          <div class="fc-desc">Type commands directly if you're not in a mic-friendly environment. The same ML + Gemini pipeline processes them identically. Space bar toggles recording.</div>
+          <div class="fc-tag">Accessible · keyboard-first</div>
+        </div>
+        <div class="feat-card">
+          <div class="fc-icon">▶</div>
+          <div class="fc-title">Command replay</div>
+          <div class="fc-desc">Every command stays in your history with a replay button. Re-run any past voice command against the current editor state — no re-speaking required.</div>
+          <div class="fc-tag">History · one-click rerun</div>
+        </div>
       </div>
     </div>
-    <div id="topbar-right">
-      <!-- Expanded language list (NEW: TypeScript, Java, C++, SQL) -->
-      <select id="language-select">
-        <option value="python">Python</option>
-        <option value="javascript">JavaScript</option>
-        <option value="typescript">TypeScript</option>
-        <option value="go">Go</option>
-        <option value="rust">Rust</option>
-        <option value="java">Java</option>
-        <option value="cpp">C++</option>
-        <option value="sql">SQL</option>
-      </select>
-      <div id="model-badge">Gemini Flash</div>
-    </div>
-  </header>
 
-  <!-- Main layout -->
-  <main id="main">
-
-    <!-- Editor pane -->
-    <div id="editor-pane">
-      <div id="editor-container"></div>
+    <!-- ML -->
+    <div class="feat-panel" id="fp-ml">
+      <div class="ml-container" style="max-width:560px;margin:20px auto 0;">
+        <div class="ml-head">Intent classifier · per-class F1 (352 training examples)</div>
+        <div class="ml-row"><div class="ml-lbl">UNDO</div><div class="ml-trk"><div class="ml-fill" style="width:97%;"></div></div><div class="ml-pct">97%</div></div>
+        <div class="ml-row"><div class="ml-lbl">GENERATE</div><div class="ml-trk"><div class="ml-fill" style="width:96%;animation-delay:.1s"></div></div><div class="ml-pct">96%</div></div>
+        <div class="ml-row"><div class="ml-lbl">EDIT</div><div class="ml-trk"><div class="ml-fill" style="width:94%;animation-delay:.15s"></div></div><div class="ml-pct">94%</div></div>
+        <div class="ml-row"><div class="ml-lbl">NAVIGATE</div><div class="ml-trk"><div class="ml-fill" style="width:92%;animation-delay:.2s"></div></div><div class="ml-pct">92%</div></div>
+        <div class="ml-row"><div class="ml-lbl">REFACTOR</div><div class="ml-trk"><div class="ml-fill" style="width:91%;animation-delay:.25s"></div></div><div class="ml-pct">91%</div></div>
+        <div class="ml-row"><div class="ml-lbl">EXPLAIN</div><div class="ml-trk"><div class="ml-fill" style="width:88%;animation-delay:.3s"></div></div><div class="ml-pct">88%</div></div>
+      </div>
+      <div style="text-align:center;margin-top:16px;">
+        <span style="font-family:var(--mono);font-size:11px;color:var(--text3);">sentence-transformers → logistic regression · retrains from command logs</span>
+      </div>
     </div>
 
-    <!-- Sidebar -->
-    <aside id="sidebar">
-
-      <!-- Transcript -->
-      <div class="sidebar-section" id="transcript-section">
-        <div class="section-header">
-          <span class="section-label">Transcript</span>
-          <span id="transcript-live-dot"></span>
+    <!-- DIFF -->
+    <div class="feat-panel" id="fp-diff">
+      <div class="diff-container" style="max-width:640px;margin:0 auto;">
+        <div class="diff-topbar">
+          <div class="ht-dot ht-r"></div><div class="ht-dot ht-y"></div><div class="ht-dot ht-g"></div>
+          <span style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-left:8px;">Monaco DiffEditor · inline · lines 3–4</span>
         </div>
-        <div id="transcript-area">
-          <div class="transcript-placeholder">
-            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" opacity="0.3">
-              <rect x="4"  y="10" width="3" height="8"  rx="1.5" fill="#7C6BFF"/>
-              <rect x="9"  y="6"  width="3" height="16" rx="1.5" fill="#7C6BFF"/>
-              <rect x="14" y="8"  width="3" height="12" rx="1.5" fill="#7C6BFF"/>
-              <rect x="19" y="11" width="3" height="6"  rx="1.5" fill="#7C6BFF"/>
-            </svg>
-            <p>Speak a command and the transcript will appear here.</p>
-          </div>
+        <div class="diff-body">
+          <div class="d-ctx"><span class="d-gu"> 1</span>def process_data(items):</div>
+          <div class="d-ctx"><span class="d-gu"> 2</span>&nbsp;&nbsp;&nbsp;&nbsp;# transform items into a keyed dict</div>
+          <div class="d-rm"><span class="d-gu">-3</span>&nbsp;&nbsp;&nbsp;&nbsp;result = {}</div>
+          <div class="d-add"><span class="d-gu">+3</span>&nbsp;&nbsp;&nbsp;&nbsp;result: dict[str, Any] = {}</div>
+          <div class="d-rm"><span class="d-gu">-4</span>&nbsp;&nbsp;&nbsp;&nbsp;result[item['id']] = item['val']</div>
+          <div class="d-add"><span class="d-gu">+4</span>&nbsp;&nbsp;&nbsp;&nbsp;result[item['id']]: Any = item['val']</div>
+          <div class="d-ctx"><span class="d-gu"> 5</span>&nbsp;&nbsp;&nbsp;&nbsp;return result</div>
         </div>
       </div>
+      <div style="text-align:center;margin-top:14px;">
+        <span style="font-family:var(--mono);font-size:11px;color:var(--text3);">monaco.editor.createDiffEditor() · accept or discard before anything is applied</span>
+      </div>
+    </div>
+  </div>
+</section>
 
-      <!-- Diff preview (Monaco inline diff) -->
-      <div id="diff-section" class="sidebar-section" style="display:none;">
-        <div class="section-header">
-          <span class="section-label">Proposed edit</span>
-          <span id="diff-line-range"></span>
-        </div>
-        <!-- This div is mounted as a Monaco diff editor by script.js -->
-        <div id="diff-preview-area"></div>
-        <div id="diff-actions">
-          <button id="apply-btn" class="btn-apply">
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-              <path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            Apply
-          </button>
-          <button id="cancel-btn" class="btn-cancel">
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-              <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-            </svg>
-            Discard
-          </button>
+<hr class="divider">
+
+<!-- STACK -->
+<section class="section reveal" id="stack">
+  <div class="s-tag">Architecture</div>
+  <h2 class="s-h">The whole stack. <span>No hand-waving.</span></h2>
+  <p class="s-p">Every layer chosen deliberately — from the audio thread to the LLM call.</p>
+
+  <div class="stack-layout">
+    <div class="sc-block">
+      <div class="sc-top">
+        <div class="ht-dot ht-r"></div><div class="ht-dot ht-y"></div><div class="ht-dot ht-g"></div>
+        <div class="sc-tabs">
+          <button class="sc-tab active" data-lang="py">Python</button>
+          <button class="sc-tab" data-lang="js">JS</button>
         </div>
       </div>
-
-      <!-- History -->
-      <div class="sidebar-section" id="history-section">
-        <div class="section-header">
-          <span class="section-label">History</span>
-          <button id="clear-history-btn" title="Clear history">
-            <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-              <path d="M2 2l7 7M9 2L2 9" stroke="#555" stroke-width="1.2" stroke-linecap="round"/>
-            </svg>
-          </button>
-        </div>
-        <div id="history-area">
-          <div class="history-placeholder">No commands yet</div>
-        </div>
+      <div class="sc-body" id="sc-body">
+        <div class="sc-line"><span class="sc-ln">1</span><span><span class="cm"># async — event loop never blocks</span></span></div>
+        <div class="sc-line"><span class="sc-ln">2</span><span><span class="kw">@app</span><span class="pl">.post(<span class="st">"/command"</span>)</span></span></div>
+        <div class="sc-line"><span class="sc-ln">3</span><span><span class="kw">async def</span> <span class="fn">process_command</span><span class="pl">(</span></span></div>
+        <div class="sc-line"><span class="sc-ln">4</span><span class="pl">&nbsp;&nbsp;&nbsp;&nbsp;command: <span class="ty">str</span> = Form(<span class="kw">None</span>),</span></div>
+        <div class="sc-line"><span class="sc-ln">5</span><span class="pl">&nbsp;&nbsp;&nbsp;&nbsp;code: <span class="ty">str</span> = Form(<span class="st">""</span>)):</span></div>
+        <div class="sc-line"><span class="sc-ln">6</span><span>&nbsp;</span></div>
+        <div class="sc-line"><span class="sc-ln">7</span><span class="pl">&nbsp;&nbsp;&nbsp;&nbsp;intent = classify_intent(command)</span></div>
+        <div class="sc-line"><span class="sc-ln">8</span><span class="pl">&nbsp;&nbsp;&nbsp;&nbsp;result = <span class="kw">await</span> asyncio.to_thread(</span></div>
+        <div class="sc-line"><span class="sc-ln">9</span><span class="pl">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;client.models.generate_content,</span></div>
+        <div class="sc-line"><span class="sc-ln">10</span><span class="pl">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;model=<span class="st">"gemini-2.5-flash-lite"</span>,</span></div>
+        <div class="sc-line"><span class="sc-ln">11</span><span class="pl">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;contents=build_prompt(command, code)</span></div>
+        <div class="sc-line"><span class="sc-ln">12</span><span class="pl">&nbsp;&nbsp;&nbsp;&nbsp;)</span></div>
+        <div class="sc-line"><span class="sc-ln">13</span><span class="pl">&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> json.loads(result.text)</span></div>
       </div>
+    </div>
 
-      <!-- Mic toolbar -->
-      <div id="toolbar">
-        <div id="mic-wrapper">
-          <div class="pulse-ring" id="ring1"></div>
-          <div class="pulse-ring" id="ring2"></div>
-          <button id="mic-btn" aria-label="Activate microphone">
-            <svg id="mic-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <rect x="7" y="2" width="6" height="10" rx="3" fill="currentColor"/>
-              <path d="M4 9a6 6 0 0012 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-              <line x1="10" y1="15" x2="10" y2="18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-              <line x1="7"  y1="18" x2="13" y2="18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-            </svg>
-            <svg id="stop-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" style="display:none;">
-              <rect x="5" y="5" width="10" height="10" rx="2" fill="currentColor"/>
-            </svg>
-          </button>
-        </div>
-        <div id="status-block">
-          <div id="status-text">Ready</div>
-          <div id="status-sub">Click mic to speak</div>
-        </div>
-        <div id="waveform" aria-hidden="true">
-          <span class="bar"></span><span class="bar"></span><span class="bar"></span>
-          <span class="bar"></span><span class="bar"></span>
-        </div>
+    <div class="stack-list">
+      <div class="si">
+        <div class="si-name">FastAPI + Uvicorn <span class="si-badge">backend</span></div>
+        <div class="si-desc">Async Python. Gemini and Whisper wrapped in asyncio.to_thread() — event loop stays free during every API call.</div>
       </div>
-
-      <!-- Text command fallback (NEW) -->
-      <div id="text-command-row">
-        <input id="text-command-input" type="text" placeholder="Or type a command…" autocomplete="off"/>
-        <button id="text-command-send">Send</button>
+      <div class="si">
+        <div class="si-name">faster-whisper <span class="si-badge">speech</span></div>
+        <div class="si-desc">CTranslate2-optimised Whisper. small.en, int8 quantised, CPU-only. ~300ms latency, fully offline.</div>
       </div>
+      <div class="si">
+        <div class="si-name">scikit-learn classifier <span class="si-badge">ML</span></div>
+        <div class="si-desc">Sentence embeddings → logistic regression. 352 examples, 6 classes. Retrains from your command logs automatically.</div>
+      </div>
+      <div class="si">
+        <div class="si-name">Monaco Editor <span class="si-badge">frontend</span></div>
+        <div class="si-desc">VS Code's engine in the browser. createDiffEditor() for real inline diffs, 80+ languages supported.</div>
+      </div>
+      <div class="si">
+        <div class="si-name">Gemini Flash Lite <span class="si-badge">LLM</span></div>
+        <div class="si-desc">Structured JSON output — startLine, endLine, newCode, explanation. application/json MIME enforced server-side.</div>
+      </div>
+    </div>
+  </div>
+</section>
 
-    </aside>
-  </main>
+<!-- CTA -->
+<div class="cta-section">
+  <div class="cta-card">
+    <div class="cta-glow"></div>
+    <h2 class="cta-h">Stop typing.<br><span>Start speaking.</span></h2>
+    <p class="cta-p">Open source. Clone it, run it locally, and edit code with your voice in under five minutes.</p>
+    <div class="cta-actions">
+      <a href="editor.html" class="btn-hero-green">
+        Launch Editor
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </a>
+      <a href="https://github.com/meetcodz" class="btn-hero-outline" target="_blank">☆ Star on GitHub</a>
+    </div>
+  </div>
+</div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
-  <script src="config.js"></script>
-  <script src="script.js"></script>
+<!-- FOOTER -->
+<footer>
+  <a href="index.html" class="foot-logo">Vakya AI</a>
+  <ul class="foot-links">
+    <li><a href="https://github.com/meetcodz" target="_blank">GitHub</a></li>
+    <li><a href="https://github.com/meetcodz/portfolio" target="_blank">Portfolio</a></li>
+    <li><a href="#stack">Docs</a></li>
+  </ul>
+  <div class="foot-copy">meetcodz · 2026</div>
+</footer>
+
+<script>
+// reveal
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('on');}),{threshold:.1});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+
+// hero mic demo
+const hmicbtn=document.getElementById('hmicbtn');
+const hvbars=document.querySelectorAll('#hvbars .hv-bar');
+const hvtext=document.getElementById('hvtext');
+const hvtag=document.getElementById('hvtag');
+let demoRunning=false,demoIdx=0;
+const demos=[
+  {cmd:'add type hints to line 3',intent:'EDIT'},
+  {cmd:'refactor this to a dict comprehension',intent:'REFACTOR'},
+  {cmd:'generate a docstring for this function',intent:'GENERATE'},
+  {cmd:'explain what this does',intent:'EXPLAIN'},
+];
+hmicbtn.addEventListener('click',()=>{
+  if(demoRunning)return; demoRunning=true;
+  const d=demos[demoIdx%demos.length]; demoIdx++;
+  hmicbtn.classList.add('on');
+  hvbars.forEach(b=>b.classList.add('lit'));
+  hvtag.style.display='none';
+  hvtext.style.color='var(--green)';
+  let i=0;
+  const ti=setInterval(()=>{
+    hvtext.textContent='"'+d.cmd.slice(0,i)+'…"'; i++;
+    if(i>d.cmd.length)clearInterval(ti);
+  },36);
+  setTimeout(()=>{
+    hvbars.forEach(b=>b.classList.remove('lit'));
+    hmicbtn.classList.remove('on');
+    hvtext.textContent='"'+d.cmd+'"';
+    hvtext.style.color='var(--text3)';
+    hvtag.textContent='✓ '+d.intent; hvtag.style.display='flex';
+    setTimeout(()=>{
+      hvtag.style.display='none';
+      hvtext.textContent='Click for another demo';
+      hvtext.style.color=''; demoRunning=false;
+    },2400);
+  },1900);
+});
+
+// feature tabs
+document.querySelectorAll('.feat-tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    document.querySelectorAll('.feat-tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.feat-panel').forEach(p=>p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('fp-'+tab.dataset.panel).classList.add('active');
+  });
+});
+
+// stack code tabs
+const pyCode=document.getElementById('sc-body').innerHTML;
+const jsCode=`
+<div class="sc-line"><span class="sc-ln">1</span><span><span class="cm">// AudioWorklet — dedicated thread</span></span></div>
+<div class="sc-line"><span class="sc-ln">2</span><span><span class="kw">class</span> <span class="fn">VakyaRecorderProcessor</span></span></div>
+<div class="sc-line"><span class="sc-ln">3</span><span class="pl">&nbsp;&nbsp;<span class="kw">extends</span> AudioWorkletProcessor {</span></div>
+<div class="sc-line"><span class="sc-ln">4</span><span>&nbsp;</span></div>
+<div class="sc-line"><span class="sc-ln">5</span><span><span class="fn">&nbsp;&nbsp;process</span><span class="pl">(inputs) {</span></span></div>
+<div class="sc-line"><span class="sc-ln">6</span><span class="pl">&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">const</span> ch = inputs[<span class="nm">0</span>]?.[<span class="nm">0</span>];</span></div>
+<div class="sc-line"><span class="sc-ln">7</span><span class="pl">&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span> (ch?.length)</span></div>
+<div class="sc-line"><span class="sc-ln">8</span><span class="pl">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.port.postMessage({</span></div>
+<div class="sc-line"><span class="sc-ln">9</span><span class="pl">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;type: <span class="st">'audio'</span>, samples: ch.slice()</span></div>
+<div class="sc-line"><span class="sc-ln">10</span><span class="pl">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;});</span></div>
+<div class="sc-line"><span class="sc-ln">11</span><span class="pl">&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return true</span>; <span class="cm">// keep processor alive</span></span></div>
+<div class="sc-line"><span class="sc-ln">12</span><span class="pl">&nbsp;&nbsp;}</span></div>
+<div class="sc-line"><span class="sc-ln">13</span><span class="pl">}</span></div>`.trim();
+const scBody=document.getElementById('sc-body');
+document.querySelectorAll('.sc-tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    document.querySelectorAll('.sc-tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    scBody.innerHTML=tab.dataset.lang==='py'?pyCode:jsCode;
+  });
+});
+</script>
 </body>
 </html>

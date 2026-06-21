@@ -6,23 +6,23 @@ require(['vs/editor/editor.main'], function () {
   monaco.editor.defineTheme('vakya-dark', {
     base: 'vs-dark', inherit: true,
     rules: [
-      { token: 'comment',  foreground: '3d3d5c', fontStyle: 'italic' },
-      { token: 'keyword',  foreground: '7C6BFF' },
-      { token: 'string',   foreground: '4ade80' },
+      { token: 'comment',  foreground: '3a3a4a', fontStyle: 'italic' },
+      { token: 'keyword',  foreground: '00E87A' },
+      { token: 'string',   foreground: '67c8ff' },
       { token: 'number',   foreground: 'fbbf24' },
-      { token: 'type',     foreground: '67e8f9' },
-      { token: 'function', foreground: 'c084fc' },
+      { token: 'type',     foreground: 'b482ff' },
+      { token: 'function', foreground: '00d46e' },
     ],
     colors: {
-      'editor.background':              '#0e0e12',
-      'editor.foreground':              '#e8e8f0',
-      'editor.lineHighlightBackground': '#13131a',
-      'editor.selectionBackground':     '#7C6BFF33',
-      'editorLineNumber.foreground':    '#2a2a3d',
-      'editorLineNumber.activeForeground': '#7070a0',
-      'editorCursor.foreground':        '#7C6BFF',
-      'editorIndentGuide.background':   '#1a1a24',
-      'editorIndentGuide.activeBackground': '#2a2a3d',
+      'editor.background':                  '#000000',
+      'editor.foreground':                  '#e8e8f0',
+      'editor.lineHighlightBackground':     '#0f0f0f',
+      'editor.selectionBackground':         '#00E87A22',
+      'editorLineNumber.foreground':        '#282828',
+      'editorLineNumber.activeForeground':  '#555555',
+      'editorCursor.foreground':            '#00E87A',
+      'editorIndentGuide.background':       '#111111',
+      'editorIndentGuide.activeBackground': '#1f1f1f',
     }
   });
 

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vakya — Voice Code Editor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ── Top bar ─────────────────────────────────────────────── -->
+  <header id="topbar">
+    <div id="topbar-left">
+      <!-- Logo -->
+      <a href="index.html" id="logo" style="text-decoration: none;">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <circle cx="10" cy="10" r="9" stroke="#00E87A" stroke-width="1.5"/>
+          <path d="M7 10 Q10 6 13 10 Q10 14 7 10Z" fill="#00E87A" opacity="0.9"/>
+        </svg>
+        <span id="logo-text">Vakya</span>
+      </a>
+
+      <!-- File tab -->
+      <div id="file-tab">
+        <span id="file-dot"></span>
+        <span id="file-name">untitled.py</span>
+
+        <button id="open-file-btn" title="Open local file">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+          </svg>
+        </button>
+
+        <button id="save-file-btn" title="Save / download file">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+            <polyline points="17 21 17 13 7 13 7 21"/>
+            <polyline points="7 3 7 8 15 8"/>
+          </svg>
+        </button>
+
+        <input type="file" id="file-input" style="display:none;"
+               accept=".py,.js,.ts,.go,.rs,.java,.cpp,.sql,.txt"/>
+      </div>
+    </div>
+
+    <div id="topbar-right">
+      <select id="language-select">
+        <option value="python">Python</option>
+        <option value="javascript">JavaScript</option>
+        <option value="typescript">TypeScript</option>
+        <option value="go">Go</option>
+        <option value="rust">Rust</option>
+        <option value="java">Java</option>
+        <option value="cpp">C++</option>
+        <option value="sql">SQL</option>
+      </select>
+    </div>
+  </header>
+
+  <!-- ── Main layout ─────────────────────────────────────────── -->
+  <main id="main">
+
+    <!-- Editor pane -->
+    <div id="editor-pane">
+      <div id="editor-container"></div>
+    </div>
+
+    <!-- Sidebar -->
+    <aside id="sidebar">
+
+      <!-- ── Transcript ─────────────────────────────────────── -->
+      <div class="sidebar-section" id="transcript-section">
+        <div class="section-header">
+          <span class="section-label">Transcript</span>
+          <span id="transcript-live-dot"></span>
+        </div>
+        <div id="transcript-area">
+          <div class="transcript-placeholder">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" opacity="0.3">
+              <rect x="4"  y="10" width="3" height="8"  rx="1.5" fill="#00E87A"/>
+              <rect x="9"  y="6"  width="3" height="16" rx="1.5" fill="#00E87A"/>
+              <rect x="14" y="8"  width="3" height="12" rx="1.5" fill="#00E87A"/>
+              <rect x="19" y="11" width="3" height="6"  rx="1.5" fill="#00E87A"/>
+            </svg>
+            <p>Speak a command and the transcript will appear here.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Proposed edit (Monaco diff) ───────────────────── -->
+      <div id="diff-section" class="sidebar-section" style="display:none;">
+        <div class="section-header">
+          <span class="section-label">Proposed edit</span>
+          <span id="diff-line-range"></span>
+        </div>
+        <div id="diff-preview-area"></div>
+        <div id="diff-actions">
+          <button id="apply-btn" class="btn-apply">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Apply
+          </button>
+          <button id="cancel-btn" class="btn-cancel">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            Discard
+          </button>
+        </div>
+      </div>
+
+      <!-- ── History ────────────────────────────────────────── -->
+      <div class="sidebar-section" id="history-section">
+        <div class="section-header">
+          <span class="section-label">History</span>
+          <button id="clear-history-btn" title="Clear history">
+            <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+              <path d="M2 2l7 7M9 2L2 9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+        <div id="history-area">
+          <div class="history-placeholder">No commands yet</div>
+        </div>
+      </div>
+
+      <!-- ── Mic toolbar ─────────────────────────────────────── -->
+      <div id="toolbar">
+        <div id="mic-wrapper">
+          <div class="pulse-ring" id="ring1"></div>
+          <div class="pulse-ring" id="ring2"></div>
+          <button id="mic-btn" aria-label="Activate microphone">
+            <svg id="mic-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <rect x="7" y="2" width="6" height="10" rx="3" fill="currentColor"/>
+              <path d="M4 9a6 6 0 0012 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+              <line x1="10" y1="15" x2="10" y2="18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              <line x1="7"  y1="18" x2="13" y2="18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <svg id="stop-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" style="display:none;">
+              <rect x="5" y="5" width="10" height="10" rx="2" fill="currentColor"/>
+            </svg>
+          </button>
+        </div>
+
+        <div id="status-block">
+          <div id="status-text">Ready</div>
+          <div id="status-sub">Click mic to speak</div>
+        </div>
+
+        <div id="waveform" aria-hidden="true">
+          <span class="bar"></span>
+          <span class="bar"></span>
+          <span class="bar"></span>
+          <span class="bar"></span>
+          <span class="bar"></span>
+        </div>
+      </div>
+
+      <!-- ── Text command fallback ──────────────────────────── -->
+      <div id="text-command-row">
+        <input id="text-command-input" type="text" placeholder="Or type a command…" autocomplete="off"/>
+        <button id="text-command-send">Send</button>
+      </div>
+
+    </aside>
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
+  <script src="config.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
