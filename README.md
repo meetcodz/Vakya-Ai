@@ -8,7 +8,6 @@ Vakya AI is a premium browser-based, AI voice-controlled code editor that lets d
 ![Stack](https://img.shields.io/badge/FastAPI-Web_Server-green.svg)
 ![Stack](https://img.shields.io/badge/Whisper-faster--whisper-blueviolet.svg)
 ![Stack](https://img.shields.io/badge/Embeddings-SentenceTransformer-yellow.svg)
-![Stack](https://img.shields.io/badge/LLM-Claude_3.5_Sonnet-orange.svg)
 ![Stack](https://img.shields.io/badge/Editor-Monaco_Editor-lightblue.svg)
 
 ---
@@ -24,7 +23,7 @@ Vakya AI is designed with an asynchronous decoupled architecture:
 2. **Backend (FastAPI Server)**:
    - **Whisper Inference**: Loads `faster-whisper` (`small.en` model) on startup with `int8` quantization for fast local CPU audio transcription.
    - **Intent Classifier**: Encodes incoming text using `sentence-transformers` (`all-MiniLM-L6-v2`) and matches the semantic structure against 6 pre-trained classes using a `LogisticRegression` classifier.
-   - **Claude API Wrapper**: Takes the classified intent, the current editor code, and the voice command. It queries Claude with a system instructions framework to obtain structured modifications.
+   - **Gemini API Wrapper**: Takes the classified intent, the current editor code, and the voice command. It queries Gemini with a system instructions framework to obtain structured modifications.
    - **Log Engine & Metrics**: Automatically saves all commands and classification history to a local `.jsonl` file to support analytics monitoring and retraining pipelines.
 
 ```
